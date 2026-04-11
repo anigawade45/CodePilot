@@ -5,10 +5,14 @@ const {
   getReviews, 
   getReviewById, 
   deleteReview, 
-  shareReview 
+  shareReview,
+  getSharedReview
 } = require('../controllers/reviewController');
 const { authenticate } = require('../middleware/auth');
 const { investigationLimiter } = require('../middleware/apiLimiter');
+
+// Public Analysis Bridge (No Auth required)
+router.get('/share/:token', getSharedReview);
 
 router.post('/review', authenticate, investigationLimiter, createReview);
 router.get('/reviews', authenticate, getReviews);

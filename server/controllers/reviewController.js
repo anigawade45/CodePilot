@@ -153,9 +153,34 @@ const shareReview = async (req, res) => {
       .single();
 
     if (error) throw error;
-    res.json({ shareUrl: `${process.env.FRONTEND_URL}/share/${data.public_token}` });
+    res.json({ public_token: data.public_token });
   } catch (error) {
     res.status(500).json({ error: error.message });
+  }
+};
+
+// 6. Get Shared Review (Public) (GET /api/share/:token)
+const getSharedReview = async (req, res) => {
+  try {
+    const { token } = req.params;
+    const { data: shared, error: sharedError } = await supabase
+      .from('shared_reviews')
+      .select('review_id')
+      .eq('public_token', token)
+      .single();
+
+    if (sharedError || !shared) return res.status(404).json({ error: "Link expired" });
+
+    const { data, error } = await supabase
+      .from('reviews')
+      .select('*, issues(*)')
+      .eq('id', shared.review_id)
+      .single();
+
+    if (error) throw error;
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: "Failed to load shared analysis" });
   }
 };
 
@@ -164,5 +189,6 @@ module.exports = {
   getReviews,
   getReviewById,
   deleteReview,
-  shareReview
+  shareReview,
+  getSharedReview
 };
