@@ -39,7 +39,6 @@ const SharedReview = () => {
     useEffect(() => {
         const fetchSharedReview = async () => {
             try {
-                // Public endpoint (doesn't require Auth header)
                 const response = await axios.get(`${CONFIG.API_BASE_URL}/share/${token}`);
                 setReview(response.data);
             } catch (err) {
