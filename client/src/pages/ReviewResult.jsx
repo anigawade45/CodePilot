@@ -93,7 +93,7 @@ const ReviewResult = () => {
     const handleShare = async () => {
         try {
             const data = await reviewService.shareReview(id);
-            const shareUrl = `${window.location.origin}/share/${data.token}`;
+            const shareUrl = `${window.location.origin}/share/${data.public_token}`;
             await navigator.clipboard.writeText(shareUrl);
             setToast({ isOpen: true, message: "System Link: Copied to clipboard", type: 'success' });
         } catch (err) {
