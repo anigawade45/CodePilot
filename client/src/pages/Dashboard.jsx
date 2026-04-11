@@ -12,11 +12,11 @@ const Dashboard = () => {
   const { reviews, setReviews, setLoading, isLoading, searchQuery } = useStore();
   const [deleteTarget, setDeleteTarget] = useState(null); // { id, title }
 
-  const filteredReviews = reviews.filter(r => 
-    r.language.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.id.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.code.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredReviews = Array.isArray(reviews) ? reviews.filter(r => 
+    r.language?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    r.code?.toLowerCase().includes(searchQuery.toLowerCase())
+  ) : [];
 
   useEffect(() => {
     const fetchReviews = async () => {
