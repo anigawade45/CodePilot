@@ -1,6 +1,5 @@
-import React, { useEffect, useState } from 'react';
-import { useStore } from '../store/useStore';
-import { reviewService } from '../services/api';
+import { useState, useCallback } from 'react';
+import { useDashboard } from '../hooks/useDashboard';
 import DashboardLayout from '../layouts/DashboardLayout';
 import DashboardHeader from '../features/dashboard/components/DashboardHeader';
 import StatsGrid from '../features/dashboard/components/StatsGrid';
@@ -8,70 +7,67 @@ import ReviewList from '../features/dashboard/components/ReviewList';
 import EmptyState from '../features/dashboard/components/EmptyState';
 import ConfirmModal from '../components/ui/ConfirmModal';
 
+/**
+ * 📊 SOVEREIGN DASHBOARD [ROBUSTNESS v9.8]
+ * ---------------------------------------
+ * - Memoized Filtering: O(n) reduction for search
+ * - Race-Condition Shield: Safe async mounting
+ * - Atomic Deletion: Functional state updates
+ */
 const Dashboard = () => {
-  const { reviews, setReviews, setLoading, isLoading, searchQuery } = useStore();
-  const [deleteTarget, setDeleteTarget] = useState(null); // { id, title }
+  const {
+    reviews,
+    filteredReviews,
+    isLoading,
+    isDeleting,
+    error,
+    purgeReview
+  } = useDashboard();
 
-  const filteredReviews = Array.isArray(reviews) ? reviews.filter(r => 
-    r.language?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.id?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    r.code?.toLowerCase().includes(searchQuery.toLowerCase())
-  ) : [];
+  const [deleteTarget, setDeleteTarget] = useState(null);
 
-  useEffect(() => {
-    const fetchReviews = async () => {
-      try {
-        setLoading(true);
-        const data = await reviewService.getReviews();
-        setReviews(data);
-      } catch (err) {
-        console.error("Failed to fetch reviews", err);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchReviews();
-  }, []);
-
-  const handleDeleteTrigger = (e, review) => {
+  const handleDeleteTrigger = useCallback((e, review) => {
     e.stopPropagation();
     setDeleteTarget({ id: review.id, title: `Investigation #${review.id.slice(0, 7)}` });
-  };
+  }, []);
 
-  const handleConfirmDelete = async () => {
+  const handleConfirmDelete = useCallback(async () => {
     if (!deleteTarget) return;
-    try {
-      await reviewService.deleteReview(deleteTarget.id);
-      setReviews(reviews.filter(r => r.id !== deleteTarget.id));
-      setDeleteTarget(null);
-    } catch (err) {
-      console.error("Failed to delete review", err);
-    }
-  };
+    const success = await purgeReview(deleteTarget.id);
+    if (success) setDeleteTarget(null);
+  }, [deleteTarget, purgeReview]);
 
   return (
     <DashboardLayout>
       <DashboardHeader />
 
-      <StatsGrid reviewsCount={reviews.length} />
+      <StatsGrid reviewsCount={reviews?.length || 0} isLoading={isLoading} />
 
-      {isLoading && reviews.length === 0 ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 animate-pulse">
-          {[1, 2, 3].map(i => <div key={i} className="h-64 bg-slate-900/50 rounded-2xl" />)}
+      {/* 📡 SIGNAL QUALITY INDICATORS */}
+      {error && (
+        <div className="mb-6 p-4 bg-red-500/10 border border-red-500/20 rounded-2xl text-xs text-red-400 font-bold uppercase tracking-widest italic animate-in slide-in-from-top-2 duration-500">
+          ⚠️ {error}
         </div>
-      ) : reviews.length === 0 ? (
-        <EmptyState />
-      ) : (
-        <ReviewList reviews={filteredReviews} onDelete={handleDeleteTrigger} />
       )}
 
-      <ConfirmModal 
+      {(!isLoading && (reviews?.length || 0) === 0) ? (
+        <EmptyState />
+      ) : (
+        <ReviewList 
+          reviews={filteredReviews} 
+          onDelete={handleDeleteTrigger} 
+          isLoading={isLoading && (reviews?.length || 0) === 0}
+        />
+      )}
+
+      <ConfirmModal
         isOpen={!!deleteTarget}
         onClose={() => setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
+        confirmLoading={isDeleting}
         title="Purge Investigation"
-        message={`Are you sure you want to permanently delete ${deleteTarget?.title}? All associated findings and security metrics will be purged.`}
-        confirmText="Confirm Purge"
+        message={`Are you sure you want to permanently delete ${deleteTarget?.title}? All associated findings and metrics will be purged from memory.`}
+        confirmText={isDeleting ? "Purging..." : "Confirm Purge"}
       />
     </DashboardLayout>
   );

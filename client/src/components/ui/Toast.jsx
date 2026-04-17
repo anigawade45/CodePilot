@@ -1,4 +1,6 @@
-import React from 'react';
+import { useEffect } from 'react';
+/* eslint-disable react/prop-types */
+ 
 import { motion, AnimatePresence } from 'framer-motion';
 import { CheckCircle2, AlertCircle, X, Info } from 'lucide-react';
 
@@ -15,7 +17,7 @@ const Toast = ({ message, type = 'success', isOpen, onClose }) => {
     info: 'border-blue-500/20 bg-blue-500/10 shadow-blue-500/10',
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (isOpen) {
       const timer = setTimeout(onClose, 4000);
       return () => clearTimeout(timer);
@@ -47,4 +49,5 @@ const Toast = ({ message, type = 'success', isOpen, onClose }) => {
   );
 };
 
+Toast.displayName = 'Toast';
 export default Toast;

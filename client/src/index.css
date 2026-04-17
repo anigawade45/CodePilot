@@ -7,11 +7,12 @@
 
 :root {
   font-family: 'Geist Variable', Inter, system-ui, sans-serif;
-  line-height: 1.5;
+  line-height: 1.6;
   font-weight: 400;
+  letter-spacing: -0.01em;
 
   color-scheme: dark;
-  --background: oklch(0.1 0 0);
+  --background: #020617;
   --foreground: oklch(0.95 0 0);
   
   font-synthesis: none;
@@ -23,11 +24,34 @@
 body {
   margin: 0;
   min-height: 100vh;
-  background: radial-gradient(circle at 50% 0%, oklch(0.15 0.02 260), oklch(0.1 0 0));
+  background: #020617;
+  background-image: 
+    radial-gradient(at 0% 0%, rgba(30, 58, 138, 0.15) 0px, transparent 50%),
+    radial-gradient(at 100% 0%, rgba(30, 58, 138, 0.15) 0px, transparent 50%);
 }
 
 * {
   box-sizing: border-box;
+}
+
+/* 🪄 PREMIUM SCROLLBARS */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  transition: all 0.3s;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(59, 130, 246, 0.3);
 }
 
 @theme inline {
@@ -74,11 +98,11 @@ body {
 }
 
 .dark {
-  --background: oklch(0.145 0 0);
+  --background: oklch(0.12 0 0);
   --foreground: oklch(0.985 0 0);
-  --card: oklch(0.205 0 0);
+  --card: oklch(0.18 0 0);
   --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.205 0 0);
+  --popover: oklch(0.18 0 0);
   --popover-foreground: oklch(0.985 0 0);
   --primary: oklch(0.922 0 0);
   --primary-foreground: oklch(0.205 0 0);
@@ -89,22 +113,9 @@ body {
   --accent: oklch(0.269 0 0);
   --accent-foreground: oklch(0.985 0 0);
   --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
+  --border: oklch(1 0 0 / 8%);
+  --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.556 0 0);
-  --chart-1: oklch(0.87 0 0);
-  --chart-2: oklch(0.556 0 0);
-  --chart-3: oklch(0.439 0 0);
-  --chart-4: oklch(0.371 0 0);
-  --chart-5: oklch(0.269 0 0);
-  --sidebar: oklch(0.205 0 0);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.269 0 0);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.556 0 0);
 }
 
 @layer base {
@@ -119,59 +130,23 @@ body {
   }
 }
 
-/* 🖨️ Professional PDF Print Styles */
 @media print {
   body {
     background: white !important;
     color: black !important;
   }
   
-  /* Force visibility and hide UI noise */
-  .no-print, [role="tablist"] {
+  .no-print, nav, header {
     display: none !important;
   }
   
-  .print-only {
-    display: block !important;
-  }
-
-  /* Expand containers to full height */
-  .h-\[calc\(100vh-280px\)\], 
-  .h-\[calc\(100vh-160px\)\],
-  .overflow-y-auto {
-    height: auto !important;
-    overflow: visible !important;
-  }
-
-  .grid {
-    display: block !important;
-  }
-
-  /* Monaco Editor Fix for Print */
-  .monaco-editor, .monaco-editor .overflow-guard {
-    height: auto !important;
-    overflow: visible !important;
-  }
-  
-  .monaco-scrollable-element {
-    height: auto !important;
-    position: relative !important;
-  }
-
   .card {
     break-inside: avoid;
     border: 1px solid #e2e8f0 !important;
     background: white !important;
     color: #1e293b !important;
     margin-bottom: 2rem !important;
-    box-shadow: none !important;
   }
-
-  /* Logo/Branding for white background */
-  .text-white { color: #0f172a !important; }
-  .text-blue-500 { color: #2563eb !important; }
-  .text-slate-400, .text-slate-500 { color: #64748b !important; }
-  .bg-slate-950, .bg-slate-900 { background: white !important; border: 1px solid #e2e8f0 !important; }
 }
 
 @keyframes gradient-x {

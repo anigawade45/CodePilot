@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { cn } from './lib/utils.js';
+import { cn } from '../lib/utils.js';
 
 /**
  * 🛰️ ENTERPRISE UTILITY VALIDATION
@@ -13,7 +13,9 @@ describe('CodePilot Utility Cluster', () => {
   });
 
   it('should handle conditional logic within the styling engine', () => {
-    const result = cn('flex', true && 'items-center', false && 'justify-center');
+    const isVisible = true;
+    const isHidden = false;
+    const result = cn('flex', isVisible && 'items-center', isHidden && 'justify-center');
     expect(result).toContain('flex');
     expect(result).toContain('items-center');
     expect(result).not.toContain('justify-center');

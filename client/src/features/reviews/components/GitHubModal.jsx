@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, GitBranch, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 
+/* eslint-disable react/prop-types */
 const GitHubModal = ({ isOpen, onClose, onImport, isLoading }) => {
   const [url, setUrl] = useState('');
   const [error, setError] = useState('');

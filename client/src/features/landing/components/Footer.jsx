@@ -1,11 +1,9 @@
-import React from 'react';
-import { Zap } from 'lucide-react';
 
 const Footer = () => {
   return (
     <footer className="max-w-7xl mx-auto px-8 py-20 border-t border-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-8 text-center md:text-left">
-      <div className="flex items-center gap-2 opacity-50">
-        <Zap className="w-4 h-4 text-blue-500" />
+      <div className="flex items-center gap-2 opacity-50 grayscale hover:grayscale-0 hover:opacity-100 transition-all duration-500">
+        <img src="/CodePilot.png" alt="CodePilot" className="w-6 h-6 object-contain" />
         <span className="text-sm font-bold tracking-tight text-white">CodePilot</span>
       </div>
       <div className="text-slate-600 text-[10px] uppercase tracking-[0.2em] font-medium text-center">

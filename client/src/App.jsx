@@ -1,64 +1,80 @@
-import { useEffect } from 'react'
+import { lazy, Suspense, memo } from 'react'
 import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { createClient } from './lib/client'
+import { HelmetProvider } from 'react-helmet-async'
+import { useAuthListener } from './hooks/useAuthListener'
+import { usePrefetch } from './hooks/usePrefetch'
 import { useStore } from './store/useStore'
-import { setAuthToken } from './services/api'
+import { ROUTES } from './constants/routes'
 
-// Pages
-import Auth from './features/auth/components/Auth'
-import Dashboard from './pages/Dashboard'
-import CodeInput from './pages/CodeInput'
-import ReviewResult from './pages/ReviewResult'
-import History from './pages/History'
-import SharedReview from './pages/SharedReview'
-import Landing from './pages/Landing'
+// Core Modules
+import MainLayout from './layouts/MainLayout'
+import ErrorBoundary from './components/ErrorBoundary'
+import { ProtectedLayout, PublicRoute } from './guards/authGuards'
+import LoadingState from './components/ui/LoadingState'
 
-const supabase = createClient();
+// 🏗️ MEMOIZED UI CLUSTERS
+const Splash = memo(() => <LoadingState message="Hydrating Session..." />);
+Splash.displayName = 'Splash';
+
+const Loader = memo(() => <LoadingState message="Accessing Layer..." />);
+Loader.displayName = 'Loader';
+
+// 📦 DYNAMIC BUNDLES
+const Landing = lazy(() => import('./pages/Landing'));
+const Dashboard = lazy(() => import('./pages/Dashboard'));
+const CodeInput = lazy(() => import('./pages/CodeInput'));
+const ReviewResult = lazy(() => import('./pages/ReviewResult'));
+const History = lazy(() => import('./pages/History'));
+const SharedReview = lazy(() => import('./pages/SharedReview'));
+const Auth = lazy(() => import('./features/auth/components/Auth'));
 
 function App() {
-  const { session, setSession } = useStore();
+  const { session } = useStore();
 
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      if (session) setAuthToken(session.access_token);
-    });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setSession(session);
-      if (session) setAuthToken(session.access_token);
-      else setAuthToken(null);
-    });
-
-    return () => subscription.unsubscribe();
-  }, [setSession]);
+  // 📡 GLOBAL ORCHESTRATORS
+  useAuthListener();
+  usePrefetch(session);
 
   return (
-    <BrowserRouter>
-      <div className="dark min-h-screen bg-slate-950 text-white selection:bg-blue-500/30">
-        <Routes>
-          {/* Public Sharing & Landing */}
-          <Route path="/" element={<Landing />} />
-          <Route path="/share/:token" element={<SharedReview />} />
+    <HelmetProvider>
+      <BrowserRouter>
+        <MainLayout>
+          <ErrorBoundary>
+            <Suspense fallback={<Loader />}>
+              <Routes>
+                {/* 📍 PUBLIC SECTOR */}
+                <Route path={ROUTES.LANDING} element={
+                  <PublicRoute session={session}>
+                    <Landing />
+                  </PublicRoute>
+                } />
 
-          {!session ? (
-            <Route path="*" element={
-              <div className="h-screen flex items-center justify-center p-6 bg-slate-950">
-                <Auth onSession={setSession} />
-              </div>
-            } />
-          ) : (
-            <>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/new" element={<CodeInput />} />
-              <Route path="/history" element={<History />} />
-              <Route path="/review/:id" element={<ReviewResult />} />
-              <Route path="*" element={<Navigate to="/dashboard" replace />} />
-            </>
-          )}
-        </Routes>
-      </div>
-    </BrowserRouter>
+                <Route path={ROUTES.SHARED_REVIEW} element={<SharedReview />} />
+
+                <Route path={ROUTES.AUTH} element={
+                  <PublicRoute session={session}>
+                    <div className="h-screen flex items-center justify-center p-6">
+                      <Auth />
+                    </div>
+                  </PublicRoute>
+                } />
+
+                {/* 🛡️ PROTECTED CLUSTER */}
+                <Route element={<ProtectedLayout session={session} SplashComponent={<Splash />} />}>
+                  <Route path={ROUTES.DASHBOARD} element={<Dashboard />} />
+                  <Route path={ROUTES.NEW_ANALYSIS} element={<CodeInput />} />
+                  <Route path={ROUTES.HISTORY} element={<History />} />
+                  <Route path={ROUTES.REVIEW_DETAIL} element={<ReviewResult />} />
+                </Route>
+
+                {/* 🔄 AUTOMATED DISPATCHER */}
+                <Route path="*" element={<Navigate to={session ? ROUTES.DASHBOARD : ROUTES.LANDING} replace />} />
+              </Routes>
+            </Suspense>
+          </ErrorBoundary>
+        </MainLayout>
+      </BrowserRouter>
+    </HelmetProvider>
   )
 }
 

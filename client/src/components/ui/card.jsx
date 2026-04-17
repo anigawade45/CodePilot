@@ -1,5 +1,4 @@
-import * as React from "react"
-
+/* eslint-disable react/prop-types */
 import { cn } from "@/lib/utils"
 
 function Card({

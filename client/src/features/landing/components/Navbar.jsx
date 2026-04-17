@@ -1,11 +1,8 @@
-import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, LogOut } from 'lucide-react';
+import { LogOut } from 'lucide-react';
 import { Button } from '../../../components/ui/button';
 import { useStore } from '../../../store/useStore';
-import { createClient } from '../../../lib/client';
-
-const supabase = createClient();
+import { supabase } from '../../../lib/supabase';
 
 const Navbar = () => {
   const navigate = useNavigate();
@@ -18,16 +15,20 @@ const Navbar = () => {
   };
 
   return (
-    <nav className="max-w-7xl mx-auto px-8 py-8 flex justify-between items-center relative z-20">
-      <div className="flex items-center gap-2 group cursor-pointer" onClick={() => navigate('/')}>
-        <div className="p-2 bg-linear-to-br from-blue-500 to-indigo-600 rounded-xl group-hover:rotate-12 transition-transform shadow-lg shadow-blue-500/20">
-          <Zap className="w-5 h-5 fill-white text-white" />
-        </div>
-        <span className="text-2xl font-black tracking-tighter text-white">CodePilot</span>
+    <nav className="max-w-7xl mx-auto px-6 md:px-8 py-6 md:py-8 flex justify-between items-center relative z-20">
+      <div className="flex items-center gap-3 group cursor-pointer" onClick={() => navigate('/')}>
+        <img 
+          src="/CodePilot.png" 
+          alt="CodePilot" 
+          className="w-10 h-10 object-contain group-hover:scale-110 transition-transform filter drop-shadow-[0_0_8px_rgba(59,130,246,0.3)]" 
+        />
+        <span className="text-xl md:text-2xl font-black tracking-tighter text-white">CodePilot</span>
       </div>
+      
+      {/* 💻 Desktop Navigation */}
       <div className="hidden md:flex items-center gap-8 text-sm font-medium text-slate-400">
         <a href="#features" className="hover:text-white transition-colors">Features</a>
-        <a href="#how-it-works" className="hover:text-white transition-colors">Workflow</a>
+        <a href="#investigations" className="hover:text-white transition-colors">Stats</a>
         <a href="#pricing" className="hover:text-white transition-colors">Pricing</a>
 
         {session ? (
@@ -46,6 +47,27 @@ const Navbar = () => {
           >
             Sign In
           </Button>
+        )}
+      </div>
+
+      {/* 📱 Mobile Quick Actions */}
+      <div className="md:hidden">
+        {session ? (
+            <Button
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+              className="bg-slate-900/50 border border-slate-800 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg px-4"
+            >
+              Dashboard
+            </Button>
+        ) : (
+            <Button
+              size="sm"
+              onClick={() => navigate('/dashboard')}
+              className="bg-blue-600 text-white text-[10px] font-bold uppercase tracking-widest rounded-lg px-4"
+            >
+              Sign In
+            </Button>
         )}
       </div>
     </nav>

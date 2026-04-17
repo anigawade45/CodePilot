@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Code2,
@@ -11,16 +11,15 @@ import {
   Download,
   Share2,
   Terminal,
-  ChevronRight,
   Info
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
+/* eslint-disable react/prop-types */
 const CategoryIcon = ({ category }) => {
   switch (category) {
     case 'Security': return <ShieldAlert className="w-4 h-4 text-red-400" />;
@@ -31,6 +30,7 @@ const CategoryIcon = ({ category }) => {
   }
 };
 
+/* eslint-disable react/prop-types */
 const CodeReviewer = ({ user, token, onSignOut }) => {
   const [code, setCode] = useState('');
   const [isAnalyzing, setIsAnalyzing] = useState(false);

@@ -15,8 +15,8 @@ export const setAuthToken = (token) => {
 };
 
 export const reviewService = {
-  createReview: async (code, language) => {
-    const response = await api.post('/review', { code, language });
+  createReview: async (code, language, aiConfig = null) => {
+    const response = await api.post('/review', { code, language, aiConfig });
     return response.data;
   },
 
