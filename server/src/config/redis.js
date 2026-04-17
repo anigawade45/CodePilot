@@ -16,12 +16,12 @@ if (process.env.REDIS_URL) {
   redisClient = createClient({
     url: process.env.REDIS_URL,
     socket: {
-      connectTimeout: 5000, 
+      connectTimeout: 5000,
       keepAlive: 5000,
       reconnectStrategy: (retries) => {
         if (retries > 2) {
           console.warn('🛡️ [Sovereign Failover] Cluster Signal Lost. Transitioning to Local Memory Mode.');
-          return new Error('Redis unreachable'); 
+          return new Error('Redis unreachable');
         }
         return 500;
       }
@@ -52,8 +52,8 @@ if (process.env.REDIS_URL) {
   redisClient = {
     get: async () => null,
     set: async () => null,
-    on: () => {},
-    connect: async () => {},
+    on: () => { },
+    connect: async () => { },
     isOpen: false
   };
 }

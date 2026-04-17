@@ -26,6 +26,7 @@ const CodeInput = lazy(() => import('./pages/CodeInput'));
 const ReviewResult = lazy(() => import('./pages/ReviewResult'));
 const History = lazy(() => import('./pages/History'));
 const SharedReview = lazy(() => import('./pages/SharedReview'));
+const HowItWorks = lazy(() => import('./pages/HowItWorks'));
 const Auth = lazy(() => import('./features/auth/components/Auth'));
 
 function App() {
@@ -49,6 +50,7 @@ function App() {
                   </PublicRoute>
                 } />
 
+                <Route path={ROUTES.HOW_IT_WORKS} element={<HowItWorks />} />
                 <Route path={ROUTES.SHARED_REVIEW} element={<SharedReview />} />
 
                 <Route path={ROUTES.AUTH} element={

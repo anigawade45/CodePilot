@@ -9,7 +9,8 @@ import {
   Bell,
   User,
   Menu,
-  ChevronLeft
+  ChevronLeft,
+  HelpCircle
 } from 'lucide-react';
 import { useStore } from '../store/useStore';
 import { supabase } from '../lib/supabase';
@@ -21,12 +22,14 @@ const SIDEBAR_ITEMS = [
   { id: 'dashboard', label: 'Dashboard', icon: LayoutDashboard, path: ROUTES.DASHBOARD },
   { id: 'new', label: 'New Review', icon: PlusCircle, path: ROUTES.NEW_ANALYSIS },
   { id: 'history', label: 'Analysis History', icon: History, path: ROUTES.HISTORY },
+  { id: 'how-it-works', label: 'System Guide', icon: HelpCircle, path: ROUTES.HOW_IT_WORKS },
 ];
 
 const PAGE_TITLES = {
   [ROUTES.DASHBOARD]: 'Intelligence Dashboard',
   [ROUTES.NEW_ANALYSIS]: 'New Investigation Protocol',
   [ROUTES.HISTORY]: 'Repository Analysis History',
+  [ROUTES.HOW_IT_WORKS]: 'Architectural Guide',
   [ROUTES.REVIEW_DETAIL.split('/:id')[0]]: 'Investigation Findings',
 };
 

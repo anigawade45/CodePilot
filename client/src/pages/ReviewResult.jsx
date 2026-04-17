@@ -3,21 +3,21 @@ import CodeMirror from '@uiw/react-codemirror';
 import { oneDark } from '@codemirror/theme-one-dark';
 import { getLanguageExtension } from '../lib/codemirror';
 import { useReviewResult } from '../hooks/useReviewResult';
-import { 
-  ShieldAlert, 
-  Zap, 
-  Bug, 
-  Palette, 
-  ChevronLeft, 
-  Download, 
-  Share2, 
-  FileCode, 
-  CheckCircle2, 
-  Trash2, 
-  Activity,
-  Code2,
-  AlertTriangle,
-  Info
+import {
+    ShieldAlert,
+    Zap,
+    Bug,
+    Palette,
+    ChevronLeft,
+    Download,
+    Share2,
+    FileCode,
+    CheckCircle2,
+    Trash2,
+    Activity,
+    Code2,
+    AlertTriangle,
+    Info
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import DashboardLayout from '../layouts/DashboardLayout';
@@ -27,7 +27,6 @@ import GlassCard from '../components/ui/GlassCard';
 import MetricCircle from '../components/ui/MetricCircle';
 import LoadingState from '../components/ui/LoadingState';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 
 const ReviewResult = () => {
     const {
@@ -83,7 +82,7 @@ const ReviewResult = () => {
                             onClick={() => navigate('/dashboard')}
                             className="text-slate-500 hover:text-white gap-2 pl-0 group transition-all"
                         >
-                            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" /> 
+                            <ChevronLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
                             <span className="text-[10px] font-black uppercase tracking-widest">Return to Archive</span>
                         </Button>
                         <div className="flex items-center gap-4">
@@ -92,11 +91,11 @@ const ReviewResult = () => {
                             </div>
                             <div>
                                 <h1 className="text-3xl font-black text-white tracking-tighter uppercase italic line-clamp-1">
-                                    Report: <span className="text-blue-500">#{id.slice(0, 10).toUpperCase()}</span>
+                                    Report: <span className="text-blue-500">#{id?.slice(0, 10).toUpperCase() || 'EXTERNAL'}</span>
                                 </h1>
                                 <p className="text-slate-500 font-bold text-[10px] uppercase tracking-[0.2em] flex items-center gap-2 mt-1">
                                     <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                                    Analysis Finalized • {new Date(currentReview.createdAt).toLocaleDateString()}
+                                    Analysis Finalized • {currentReview?.created_at ? new Date(currentReview.created_at).toLocaleDateString() : 'REAL-TIME PROBE'}
                                 </p>
                             </div>
                         </div>
@@ -148,25 +147,39 @@ const ReviewResult = () => {
                     </GlassCard>
 
                     <GlassCard className="p-8 md:col-span-2 flex flex-col justify-center border-blue-500/10 bg-blue-500/5">
-                        <div className="flex items-center gap-4 mb-4">
-                            <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-600/20">
-                                <Zap className="w-5 h-5 text-white" />
+                        <div className="flex items-center justify-between mb-4">
+                            <div className="flex items-center gap-4">
+                                <div className="p-3 bg-blue-600 rounded-2xl shadow-lg shadow-blue-600/20">
+                                    <Zap className="w-5 h-5 text-white" />
+                                </div>
+                                <div>
+                                    <h3 className="text-white font-black uppercase tracking-tighter text-xl italic leading-none">Intelligence Hub</h3>
+                                    <p className="text-blue-400/60 text-[9px] uppercase font-black tracking-widest mt-1">Cross-Reference Data Generated</p>
+                                </div>
                             </div>
-                            <div>
-                                <h3 className="text-white font-black uppercase tracking-tighter text-xl italic leading-none">Intelligence Hub</h3>
-                                <p className="text-blue-400/60 text-[9px] uppercase font-black tracking-widest mt-1">Cross-Reference Data Generated</p>
+                            <div className="flex flex-col items-end">
+                                <span className="text-[8px] text-slate-500 font-black uppercase tracking-widest mb-1">Source Node</span>
+                                <div className={`px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-wider shadow-lg ${
+                                    currentReview?.provider?.includes('user') 
+                                        ? 'border-emerald-500/30 text-emerald-400 bg-emerald-500/5 shadow-emerald-500/10' 
+                                        : currentReview?.provider?.includes('local')
+                                        ? 'border-blue-500/30 text-blue-400 bg-blue-500/5 shadow-blue-500/10 Anim-Pulse'
+                                        : 'border-purple-500/30 text-purple-400 bg-purple-500/5 shadow-purple-500/10'
+                                }`}>
+                                    {currentReview?.provider || 'SYSTEM-DEFAULT'}
+                                </div>
                             </div>
                         </div>
                         <p className="text-slate-400 text-xs leading-relaxed font-medium">
-                            Investigation yielded <span className="text-white font-bold">{issues.length} critical findings</span> across <span className="text-white font-bold">{currentReview.code.split('\n').length} lines</span>. 
-                            AI Engine (GPT-4o) identified <span className="text-red-400 font-bold">{issues.filter(i => i.severity === 'high').length} security hazards</span> that require immediate patching.
+                            Investigation yielded <span className="text-white font-bold">{issues.length} critical findings</span> across <span className="text-white font-bold">{(currentReview?.code || '').split('\n').length} lines</span>.
+                            Node <span className="text-blue-400 font-bold uppercase">{currentReview?.provider || 'Global Cluster'}</span> identified <span className="text-red-400 font-bold">{issues.filter(i => i.severity === 'high').length} security hazards</span> with cross-node verification.
                         </p>
                     </GlassCard>
                 </div>
 
                 {/* 🖥️ MAIN CONTENT AREA */}
                 <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-[700px]">
-                    
+
                     {/* 📄 SOURCE EXPLORER (7/12) */}
                     <div className="lg:col-span-7 flex flex-col min-h-0">
                         <div className="flex-1 bg-slate-950 rounded-[2.5rem] border border-slate-800 overflow-hidden relative shadow-2xl group">
@@ -174,7 +187,7 @@ const ReviewResult = () => {
                                 <div className="flex items-center gap-3">
                                     <Code2 className="w-4 h-4 text-blue-500" />
                                     <span className="text-[10px] text-slate-400 font-mono tracking-widest uppercase">
-                                        repository.analysis_snapshot.{currentReview.language === 'python' ? 'py' : 'js'}
+                                        repository.analysis_snapshot.{currentReview?.language === 'python' ? 'py' : 'js'}
                                     </span>
                                 </div>
                                 <div className="flex gap-1.5">
@@ -185,11 +198,11 @@ const ReviewResult = () => {
                             </div>
                             <div className="pt-12 h-full">
                                 <CodeMirror
-                                    value={currentReview.code}
+                                    value={currentReview?.code || '// Cluster offline or synchronizing...'}
                                     height="100%"
                                     theme={oneDark}
                                     extensions={[
-                                        getLanguageExtension(currentReview.language)
+                                        getLanguageExtension(currentReview?.language || 'javascript')
                                     ]}
                                     editable={false}
                                     readOnly={true}
@@ -208,11 +221,10 @@ const ReviewResult = () => {
                                     key={tab}
                                     aria-label={`${tab} findings`}
                                     onClick={() => setActiveTab(tab)}
-                                    className={`flex-1 rounded-xl py-2.5 text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${
-                                        activeTab === tab 
-                                            ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 ring-1 ring-blue-400/20' 
-                                            : 'text-slate-500 hover:text-slate-300'
-                                    }`}
+                                    className={`flex-1 rounded-xl py-2.5 text-[9px] font-black uppercase tracking-[0.15em] transition-all duration-300 ${activeTab === tab
+                                        ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 ring-1 ring-blue-400/20'
+                                        : 'text-slate-500 hover:text-slate-300'
+                                        }`}
                                 >
                                     {tab === 'all' ? `TOTAL [${issues.length}]` : tab === 'performance' ? 'PERFORMANCE' : tab.toUpperCase()}
                                 </button>
@@ -223,7 +235,7 @@ const ReviewResult = () => {
                             <AnimatePresence mode="popLayout">
                                 {filteredIssues.map((issue, index) => (
                                     <motion.div
-                                        key={issue.id}
+                                        key={issue.id || `issue-${index}`}
                                         layout
                                         initial={{ opacity: 0, scale: 0.98, y: 10 }}
                                         animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -232,9 +244,8 @@ const ReviewResult = () => {
                                     >
                                         <GlassCard
                                             onClick={() => scrollToLine(issue.line_number)}
-                                            className={`group p-6 cursor-pointer border-slate-800/60 hover:border-slate-600 transition-all ${
-                                                highlightedLine === issue.line_number ? 'ring-2 ring-blue-500/30 border-blue-500/40' : ''
-                                            }`}
+                                            className={`group p-6 cursor-pointer border-slate-800/60 hover:border-slate-600 transition-all ${highlightedLine === issue.line_number ? 'ring-2 ring-blue-500/30 border-blue-500/40' : ''
+                                                }`}
                                         >
                                             <div className="flex justify-between items-start mb-5">
                                                 <div className="flex items-center gap-4">
@@ -247,7 +258,9 @@ const ReviewResult = () => {
                                                                 {issue.severity} Severity
                                                             </span>
                                                             <span className="text-slate-700 text-[10px]">•</span>
-                                                            <span className="text-slate-500 text-[10px] font-mono">ID-{issue.id?.slice(0, 4).toUpperCase()}</span>
+                                                            <span className={`text-[8px] font-black h-4 px-2 flex items-center rounded-full border ${issue.source === 'sovereign' ? 'border-blue-500/30 text-blue-400 bg-blue-500/5' : 'border-purple-500/30 text-purple-400 bg-purple-500/5'}`}>
+                                                                {issue.source?.toUpperCase() || 'AI'}
+                                                            </span>
                                                         </div>
                                                         <h4 className="text-white text-md font-bold tracking-tight mt-1">
                                                             Finding <span className="text-slate-400 font-mono text-sm ml-1">#L{issue.line_number}</span>
@@ -279,8 +292,8 @@ const ReviewResult = () => {
                             </AnimatePresence>
 
                             {filteredIssues.length === 0 && (
-                                <motion.div 
-                                    initial={{ opacity: 0 }} 
+                                <motion.div
+                                    initial={{ opacity: 0 }}
                                     animate={{ opacity: 1 }}
                                     className="text-center py-24 bg-slate-950/40 rounded-[2.5rem] border-2 border-dashed border-slate-900"
                                 >

@@ -13,7 +13,7 @@ import { useEmailAuth } from '../../../hooks/useEmailAuth';
 const Auth = () => {
   const { login, loadingProvider, error: oauthError } = useOAuthLogin();
   const { handleMagicLink, loading: emailLoading, error: emailError } = useEmailAuth();
-  
+
   const [email, setEmail] = useState('');
   const [sentStatus, setSentStatus] = useState(false);
   const isGitHubLoading = loadingProvider === 'github';
@@ -141,7 +141,7 @@ const Auth = () => {
             className="relative z-10 w-full flex flex-col items-center text-center space-y-6"
           >
             <div className="w-16 h-16 rounded-full bg-blue-500/10 flex items-center justify-center border border-blue-500/20">
-               <CheckCircle2 className="w-8 h-8 text-blue-400" />
+              <CheckCircle2 className="w-8 h-8 text-blue-400" />
             </div>
             <div className="space-y-2">
               <h3 className="text-xl font-bold text-white">Handshake Sent</h3>
@@ -149,8 +149,8 @@ const Auth = () => {
                 Check <span className="text-blue-400 font-bold font-mono">{email}</span> for your secure access link.
               </p>
             </div>
-            <Button 
-              variant="ghost" 
+            <Button
+              variant="ghost"
               onClick={() => setSentStatus(false)}
               className="text-slate-500 hover:text-white text-[10px] uppercase tracking-widest"
             >

@@ -49,6 +49,18 @@ def check_security(line):
             "message": "Unsafe DOM manipulation (XSS Risk).",
             "suggestion": "Use .textContent or a sanitizer library."
         }
+    if 'eval(' in line:
+        return {
+            "category": "security", "severity": "critical",
+            "message": "Dangerous Execution: eval() detected.",
+            "suggestion": "Remove eval() immediately; use JSON.parse() or computed property names instead."
+        }
+    if 'document.write(' in line:
+        return {
+            "category": "security", "severity": "high",
+            "message": "Legacy DOM Write: document.write() detected.",
+            "suggestion": "Use DOM manipulation methods like appendChild() or insertAdjacentHTML()."
+        }
     return None
 
 def analyze(code):

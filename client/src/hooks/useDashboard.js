@@ -28,27 +28,37 @@ export const useDashboard = () => {
 
   // 🔄 HYDRATION CIRCUIT
   const refresh = useCallback(async (showLoading = true) => {
-    let ignore = false;
     try {
       if (showLoading) setLoading(true);
       setError(null);
       const data = await reviewService.getReviews();
-      if (!ignore) setReviews(data || []);
+      setReviews(data || []);
     } catch (err) {
-      if (!ignore) {
-        console.error("Dashboard Sync Failed:", err);
-        setError("Database Link Unstable: Failed to resolve analysis cluster.");
-      }
+      console.error("Dashboard Sync Failed:", err);
+      setError("Database Link Unstable: Failed to resolve analysis cluster.");
     } finally {
-      if (!ignore) setLoading(false);
+      if (showLoading) setLoading(false);
     }
-    return () => { ignore = true; };
   }, [setLoading, setReviews]);
 
   useEffect(() => {
-    const unsub = refresh();
-    return () => { if (typeof unsub === 'function') unsub(); };
-  }, [refresh]);
+    let ignore = false;
+    const sync = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const data = await reviewService.getReviews();
+        if (!ignore) setReviews(data || []);
+      } catch (err) {
+        if (!ignore) setError("Database Link Unstable: Failed to resolve analysis cluster.");
+      } finally {
+        if (!ignore) setLoading(false);
+      }
+    };
+    
+    sync();
+    return () => { ignore = true; };
+  }, [setReviews, setLoading]);
 
   // 🧨 PURGE LOGIC
   const purgeReview = useCallback(async (id) => {

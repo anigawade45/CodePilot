@@ -12,4 +12,5 @@ export const ROUTES = {
   HISTORY: '/history',
   REVIEW_DETAIL: '/review/:id',
   SHARED_REVIEW: '/share/:token',
+  HOW_IT_WORKS: '/how-it-works',
 };

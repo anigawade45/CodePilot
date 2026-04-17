@@ -35,10 +35,10 @@ class ErrorBoundary extends React.Component {
           </div>
           <h1 className="text-2xl font-bold text-white mb-2">Systems Critical</h1>
           <p className="text-slate-400 mb-6 max-w-md">
-            The application cluster encountered an unexpected runtime failure. 
+            The application cluster encountered an unexpected runtime failure.
             Session data is safe, but a reload is required to restore modular integrity.
           </p>
-          <button 
+          <button
             onClick={() => window.location.reload()}
             className="px-6 py-2 bg-blue-600 hover:bg-blue-500 text-white rounded-lg transition-colors font-medium"
           >

@@ -1,49 +1,48 @@
 const { GoogleGenerativeAI } = require("@google/generative-ai");
 const OpenAI = require("openai");
-const Anthropic = require("@anthropic-ai/sdk");
 const promptManager = require('../utils/promptManager');
 
 // 📡 Providers Configuration
 const genAI = process.env.GEMINI_API_KEY ? new GoogleGenerativeAI(process.env.GEMINI_API_KEY) : null;
-const openai = process.env.OPENAI_API_KEY ? new OpenAI({ apiKey: process.env.OPENAI_API_KEY }) : null;
 const grok = process.env.XAI_API_KEY ? new OpenAI({
     apiKey: process.env.XAI_API_KEY,
     baseURL: "https://api.x.ai/v1",
 }) : null;
-const anthropic = process.env.ANTHROPIC_API_KEY ? new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY }) : null;
+const groq = process.env.GROQ_API_KEY ? new OpenAI({
+    apiKey: process.env.GROQ_API_KEY,
+    baseURL: "https://api.groq.com/openai/v1",
+}) : null;
 
 // 📊 Cost Tracking Constants (Per 1k tokens)
 const COST_ESTIMATES = {
     gemini: 0.0001,
-    openai: 0.01,
-    claude: 0.015,
     grok: 0.005
 };
 
 const estimateTokens = (text) => Math.ceil(text.length / 4); // Standard approx
 
 const SYSTEM_PROMPT = `
-You are a high-precision AI Code Review API.
-Your task is to analyze code and return ONLY a valid JSON array of findings.
+You are the "Sovereign Intelligence Lead" for the CodePilot platform.
+Your objective is to provide high-fidelity, professional-grade code investigations.
+You must analyze the code through the lens of a Senior Security Researcher and a Staff Systems Architect.
 
-JSON Schema:
+JSON Schema Output Required:
 [
   {
     "line_number": number,
     "category": "bug" | "security" | "performance" | "style",
     "severity": "high" | "medium" | "low",
     "confidence": number (0.0 to 1.0),
-    "message": string,
-    "suggestion": string
+    "message": string (Be technical and explain the structural impact),
+    "suggestion": string (Provide specific refactoring or fix patterns)
   }
 ]
 
-Strict Rules:
-- NO conversational text.
-- NO markdown backticks.
-- NO intro or outro.
-- If no issues found, return [].
-- If language is unclear, use best judgment.
+Strict Operational Constraints:
+- NO conversational text or preambles.
+- NO markdown code block wrappers around the JSON.
+- If the risk is critical, elevate the 'severity' and explain the blast radius in 'message'.
+- If the code is perfect, return [].
 `;
 
 // 🧹 Robust JSON Extraction Helper [SENIOR v10.0]
@@ -53,7 +52,7 @@ const extractJson = (text) => {
     // 🔍 AGGRESSIVE SCAN: Non-greedy capture of the first JSON array structure
     let sanitizedText = text;
     try {
-        const jsonMatch = text.match(/\[\s*{[\s\S]*?}\s*\]/); 
+        const jsonMatch = text.match(/\[\s*{[\s\S]*?}\s*\]/);
         if (jsonMatch) {
             sanitizedText = jsonMatch[0];
         } else {
@@ -78,7 +77,7 @@ const extractJson = (text) => {
         return [];
     } catch (e) {
         console.warn("⚠️ [Signal Rupture] Recursive parsing failed. Intelligence signal is unreadable.");
-        return []; // 🛡️ Resilience: Return empty array instead of null to prevent system crash
+        return [];
     }
 };
 
@@ -86,46 +85,29 @@ const extractJson = (text) => {
 const providers = {
     gemini: async (prompt) => {
         if (!genAI) throw new Error("Gemini Key Missing");
-        // Enforce JSON Mode for Gemini 2.0
         const model = genAI.getGenerativeModel({
-            model: "gemini-2.0-flash",
+            model: "gemini-3.1-flash-lite-preview",
             generationConfig: { responseMimeType: "application/json" }
         });
         const result = await model.generateContent(prompt);
         return result.response.text();
     },
-    openai: async (prompt) => {
-        if (!openai) throw new Error("OpenAI Key Missing");
-        const response = await openai.chat.completions.create({
-            model: "gpt-4o-mini",
-            messages: [{ role: "user", content: prompt }],
-            temperature: 0.1,
-            response_format: { type: "json_object" }
-        });
-        return response.choices[0].message.content;
-    },
     grok: async (prompt) => {
         if (!grok) throw new Error("Grok Key Missing");
         const response = await grok.chat.completions.create({
-            model: "grok-beta",
+            model: "grok-3-mini",
             messages: [{ role: "user", content: prompt }],
         });
         return response.choices[0].message.content;
     },
-    claude: async (prompt) => {
-        if (!anthropic) throw new Error("Anthropic Key Missing");
-        const message = await anthropic.messages.create({
-            model: "claude-3-5-sonnet-20240620",
-            max_tokens: 2048,
+    groq: async (prompt) => {
+        if (!groq) throw new Error("Groq Key Missing");
+        const response = await groq.chat.completions.create({
+            model: "llama-3.3-70b-versatile",
             messages: [{ role: "user", content: prompt }],
+            response_format: { type: "json_object" }
         });
-        return message.content[0].text;
-    },
-    failover_mock: async (prompt) => {
-        // 🛡️ Failover Protocol: High-Fidelity Mock response for system stability
-        return JSON.stringify([
-            { line_number: 1, category: "style", severity: "low", confidence: 0.5, message: "System operating in failover mode. Results may be limited.", suggestion: "Check API keys or Local LLM status for full analysis." }
-        ]);
+        return response.choices[0].message.content;
     },
     sovereign: async (code, language) => {
         const { spawnSync } = require('child_process');
@@ -144,200 +126,161 @@ const providers = {
         }
 
         return result.stdout;
+    },
+    local_neural_node: async (prompt, config = {}) => {
+        // 🧠 TIER 3: Trained Local Model (Ollama/Llama)
+        const url = config.endpoint || process.env.LOCAL_MODEL_URL || "http://localhost:11434/api/generate";
+        const modelName = config.model || process.env.LOCAL_MODEL_NAME || "codepilot-brain:latest";
+        
+        console.log(`🦾 [Neural Ingress] Attempting local audit via ${modelName} at ${url}...`);
+        
+        try {
+            const axios = require('axios');
+            const res = await axios.post(url, {
+                model: modelName,
+                prompt: prompt,
+                stream: false,
+                format: "json"
+            }, { timeout: 300000 }); // 5 minute timeout for local hardware
+            
+            console.log(`✅ [Neural Ingress] Local audit completed via ${modelName}`);
+            return res.data.response || res.data.message?.content;
+        } catch (e) {
+            console.error(`❌ [Neural Failure] Local cluster is unresponsive: ${e.message}`);
+            throw new Error(`Local Neural Node Offline: ${e.message}`);
+        }
     }
 };
 
 /**
- * 🤖 UNIVERSAL ANALYSIS ENGINE (BYOK SUPPORTED)
- * @param {string} code - Source code to analyze
- * @param {string} language - Target language
- * @param {Object} [config] - Optional overrides (provider, model, apiKey)
+ * 🤖 HIERARCHICAL ANALYSIS ENGINE (CASCADING FAILOVER)
+ * Priority Flow:
+ * 1. User Provided API (BYOK)
+ * 2. System Default (.env)
+ * 3. Trained Local Neural Node (Ollama/Llama)
+ * 4. Sovereign Python AST Engine (Last Resort)
  */
 const analyzeCode = async (code, language, config = {}) => {
+    const startTime = Date.now();
     const lines = code.split('\n');
     if (lines.length > 800) throw new Error("File too large. Over 800 lines exceeds safe context.");
 
     const activePrompt = promptManager.getPrompt();
-    
-    // 🧠 LANGUAGE-AWARE TUNING
-    const languageHints = {
-        javascript: "Focus on async/await race conditions, closures, and React re-render loops.",
-        python: "Focus on mutability, list comprehensions, and PEP8 semantic violations.",
-        java: "Focus on Thread Safety, NullPointer risks, and Stream API efficiency.",
-        typescript: "Focus on 'any' type abuse and interface strictness."
-    };
-    
-    const hint = languageHints[language.toLowerCase()] || "General logical consistency and security.";
-    const fullSystemPrompt = `${SYSTEM_PROMPT}\n\nExpertise Overlay: ${hint}\nAdditional Context: ${activePrompt.system}`;
-    
-    // 🚦 ROUTING LOGIC: LOCAL FIRST = FREE + FAST
-    const sequence = config.provider
-        ? [config.provider]
-        : ['local', 'gemini', 'openai', 'claude', 'grok', 'sovereign']; 
+    const fullPrompt = `${SYSTEM_PROMPT}\n\nLanguage: ${language}\n\nCode:\n${code}\n\nInstructions: ${activePrompt.system}`;
 
-    let lastError = null;
+    let combinedIssues = [];
+    let usedProvider = 'none';
 
-    for (const providerId of sequence) {
-        try {
-            console.log(`📡 [Pulse Link] Engaging ${providerId} ${config.model ? `(${config.model})` : ''} | Mode: ${config.apiKey ? 'BYOK' : 'SERVER_POOL'}`);
+    // 🌊 STAGE 1 & 2: Cloud Cascading (BYOK -> System -> System Pool Fallback)
+    const cloudAttempt = async () => {
+        const requestedProvider = config.provider || 'gemini';
 
-            const userPrompt = `Language: ${language}\nCode:\n${code}`;
-            let rawResponse;
-            const startTime = Date.now();
+        // (A) Check USER provided keys first for the requested provider
+        if (config.apiKey && providers[requestedProvider]) {
+            console.log(`🔑 [BYOK] Attempting User-Provided ${requestedProvider} Cluster...`);
 
-            // 🛠️ DYNAMIC INSTANTIATION (For BYOK & Local)
-            if (providerId === 'gemini') {
-                const runner = config.apiKey ? new GoogleGenerativeAI(config.apiKey) : genAI;
-                if (!runner) throw new Error("Gemini Key Missing");
-                const model = runner.getGenerativeModel({
-                    model: config.model || "gemini-2.0-flash",
-                    generationConfig: { responseMimeType: "application/json" },
-                    systemInstruction: fullSystemPrompt
-                });
-                const result = await model.generateContent(userPrompt);
-                rawResponse = result.response.text();
+            let endpoint = config.endpoint;
+            if (!endpoint) {
+                if (requestedProvider === 'grok') endpoint = "https://api.x.ai/v1";
+                if (requestedProvider === 'groq') endpoint = "https://api.groq.com/openai/v1";
             }
-            else if (providerId === 'openai' || providerId === 'grok') {
-                const base = providerId === 'grok' ? "https://api.x.ai/v1" : undefined;
-                const runner = config.apiKey ? new OpenAI({ apiKey: config.apiKey, baseURL: base }) : (providerId === 'grok' ? grok : openai);
-                if (!runner) throw new Error(`${providerId} Key Missing`);
-                const response = await runner.chat.completions.create({
-                    model: config.model || (providerId === 'grok' ? "grok-beta" : "gpt-4o-mini"),
-                    messages: [
-                        { role: "system", content: fullSystemPrompt },
-                        { role: "user", content: userPrompt }
-                    ],
-                    temperature: 0.1,
-                    response_format: providerId === 'openai' ? { type: "json_object" } : undefined
-                });
-                rawResponse = response.choices[0].message.content;
-            }
-            else if (providerId === 'claude') {
-                const runner = config.apiKey ? new Anthropic({ apiKey: config.apiKey }) : anthropic;
-                if (!runner) throw new Error("Anthropic Key Missing");
-                const message = await runner.messages.create({
-                    model: config.model || "claude-3-5-sonnet-20240620",
-                    max_tokens: 2048,
-                    system: fullSystemPrompt,
-                    messages: [{ role: "user", content: userPrompt }],
-                });
-                rawResponse = message.content[0].text;
-            }
-            else if (providerId === 'local') {
-                // 🏠 [PRO UPGRADE] STEERING LLM FOR OLLAMA
-                const endpoint = config.endpoint || "http://localhost:11434/api/generate";
-                const axios = require('axios');
 
-                const possibleModels = [config.model, "codellama", "llama3", "mistral"].filter(Boolean);
-                let modelUsed = "unknown";
-
-                const localStrongPrompt = `
-You are a strict Code Review API.
-Return ONLY a valid JSON array.
-
-[Schema]
-[{ "line_number": n, "category": "bug"|"security"|"performance"|"style", "severity": "high"|"medium"|"low", "confidence": float, "message": "...", "suggestion": "..." }]
-
-[Instruction]
-- No markdown.
-- No intro text.
-- If clean, return [].
-- Break format = system failure.
-
-${userPrompt}`;
-
-                for (const mName of possibleModels) {
-                    try {
-                        console.log(`📡 [Sovereign Connect] Targeting Local Model: ${mName}...`);
-
-                        const response = await axios.post(endpoint, {
-                            model: mName,
-                            prompt: localStrongPrompt,
-                            stream: false,
-                            options: { temperature: 0.1, num_ctx: 4096 }
-                        }, { timeout: 15000 }); // ⚡ Snappier UX
-                        
-                        rawResponse = response.data.response;
-                        console.log(`🧬 [Signal Detected] [${mName}]: Length ${rawResponse?.length || 0}`);
-
-                        modelUsed = mName;
-                        if (rawResponse && (rawResponse.includes('[') || rawResponse.includes('{'))) break;
-                    } catch (e) {
-                        console.warn(`⚠️ [Model Skip] ${mName} error:`, e.message);
-                        continue;
-                    }
+            try {
+                if (requestedProvider === 'gemini') {
+                    const tempGenAI = new GoogleGenerativeAI(config.apiKey);
+                    const model = tempGenAI.getGenerativeModel({
+                        model: config.model || "gemini-3.1-flash-lite-preview",
+                        generationConfig: { responseMimeType: "application/json" }
+                    });
+                    const result = await model.generateContent(fullPrompt);
+                    return { issues: extractJson(result.response.text()), name: `user-${requestedProvider}` };
+                } else if (requestedProvider === 'local') {
+                    const localRaw = await providers.local_neural_node(fullPrompt, config);
+                    return { issues: extractJson(localRaw), name: `user-local` };
+                } else {
+                    const tempAI = new OpenAI({ apiKey: config.apiKey, baseURL: endpoint || undefined });
+                    const response = await tempAI.chat.completions.create({
+                        model: config.model || (requestedProvider === 'grok' ? "grok-3-mini" : "llama-3.3-70b-versatile"),
+                        messages: [{ role: "user", content: fullPrompt }],
+                        response_format: { type: "json_object" }
+                    });
+                    return { issues: extractJson(response.choices[0].message.content), name: `user-${requestedProvider}` };
                 }
-
-                if (!rawResponse || (!rawResponse.includes('[') && !rawResponse.includes('{'))) {
-                    console.log("📡 [Sovereign Pivot] Local LLM signal is unreadable. Engaging Python cluster...");
-                    rawResponse = await providers.sovereign(code, language);
-                }
+            } catch (e) {
+                console.warn(`⚠️ [BYOK Failed] User key invalid or rate-limited: ${e.message}`);
             }
-            else if (providerId === 'sovereign') {
-                rawResponse = await providers.sovereign(code, language);
-                if (!rawResponse) throw new Error("Local analyzer returned empty result.");
-            }
-            else {
-                rawResponse = await providers.failover_mock(userPrompt);
-            }
-
-            const endTime = Date.now();
-            const results = extractJson(rawResponse);
-
-            // 🛡️ SEMANTIC FAILOVER: Loop check
-            if (!results || results.length === 0) {
-                if (providerId !== 'local' && providerId !== 'sovereign') {
-                    throw new Error("Semantic Rupture: Provider returned no valid findings.");
-                }
-            }
-
-            // 🧠 INTELLIGENT DEDUPLICATION & OVERRIDES
-            const uniqueIssues = [];
-            const seen = new Set();
-
-            for (let issue of results) {
-                // 💥 SECURITY OVERRIDE: Zero-tolerance for low-severity security flags
-                if (issue.category === "security" && issue.severity === "low") {
-                    issue.severity = "high";
-                }
-
-                // 🫧 DEDUPLICATION
-                const key = `${issue.line_number}-${issue.message.slice(0, 30)}`;
-                if (!seen.has(key)) {
-                    seen.add(key);
-                    uniqueIssues.push(issue);
-                }
-            }
-
-            // 📊 Metrics Calculation
-            const inputTokens = estimateTokens(userPrompt + fullSystemPrompt);
-            const outputTokens = estimateTokens(rawResponse);
-            const totalTokens = inputTokens + outputTokens;
-            const estimatedCost = (totalTokens / 1000) * (COST_ESTIMATES[providerId] || 0.001);
-
-            return {
-                issues: uniqueIssues,
-                meta: {
-                    provider: providerId,
-                    model: config.model || (providerId === 'openai' ? 'gpt-4o-mini' : providerId),
-                    mode: config.apiKey ? 'BYOK' : 'SERVER_POOL',
-                    promptVersion: activePrompt.version,
-                    usage: {
-                        tokens: totalTokens,
-                        estimatedCost: config.apiKey ? 0 : estimatedCost, // $0 if user paid themselves
-                        latencyMs: endTime - startTime
-                    }
-                }
-            };
-        } catch (error) {
-            console.warn(`⚠️ [Provider Bypassed] ${providerId} logic failed:`, error.message);
-            lastError = error;
-            if (config.provider) break; // Don't failover if user specifically chose this one
-            continue;
         }
-    }
 
-    throw new Error(`Critical: Intelligence link failed. ${lastError?.message || 'Unknown error'}`);
+        // (B) Check SYSTEM pool for the requested provider then ALL OTHER available providers
+        const systemPool = Object.keys(providers).filter(p => !['sovereign', 'local_neural_node'].includes(p));
+
+        // Reorder pool to try requested first, then others
+        const sortedPool = [requestedProvider, ...systemPool.filter(p => p !== requestedProvider)];
+
+        for (const p of sortedPool) {
+            if (!providers[p]) continue;
+
+            console.log(`📡 [SYSTEM CLUSTER] Attempting ${p} Node...`);
+            try {
+                const raw = await providers[p](fullPrompt);
+                const issues = extractJson(raw);
+                if (issues.length > 0) {
+                    return { issues, name: `system-${p}` };
+                }
+            } catch (e) {
+                console.warn(`⚠️ [SYSTEM Node Failed] ${p} node offline or restricted: ${e.message}`);
+            }
+        }
+
+        return null;
+    };
+
+    try {
+        const cloudResult = await cloudAttempt();
+
+        if (cloudResult && cloudResult.issues.length > 0) {
+            combinedIssues = cloudResult.issues.map(i => ({ ...i, source: 'cloud-ai' }));
+            usedProvider = cloudResult.name;
+        } else {
+            // 🧠 STAGE 3: Trained Local Model
+            console.log("🦾 [NEURAL FAILOVER] Cloud exhausted. Attempting Local Neural Node...");
+            try {
+                const localRaw = await providers.local_neural_node(fullPrompt);
+                const localIssues = extractJson(localRaw);
+                if (localIssues.length > 0) {
+                    combinedIssues = localIssues.map(i => ({ ...i, source: 'local-neural' }));
+                    usedProvider = 'local-neural-node';
+                }
+            } catch (e) {
+                console.warn(`⚠️ [NEURAL Failed] Local model offline: ${e.message}`);
+            }
+        }
+
+        // 🛡️ STAGE 4: Sovereign Python Engine (The Safety Net)
+        if (combinedIssues.length === 0) {
+            const sovRaw = await providers.sovereign(code, language);
+            const sovIssues = extractJson(sovRaw);
+            combinedIssues = (sovIssues || []).map(i => ({ ...i, source: 'sovereign' }));
+            usedProvider = 'sovereign-ast';
+        }
+
+        const endTime = Date.now();
+        return {
+            issues: combinedIssues.sort((a, b) => a.line_number - b.line_number),
+            meta: {
+                provider: usedProvider,
+                latencyMs: endTime - startTime,
+                failoverActive: combinedIssues.some(i => i.source === 'sovereign'),
+                components: [
+                    { name: usedProvider, status: 'active' }
+                ]
+            }
+        };
+
+    } catch (error) {
+        console.error("🔥🔥 [SYSTEM CRASH] Critical cascading failure:", error.message);
+        throw new Error(`Intelligence Link Failure: ${error.message}`);
+    }
 };
 
 module.exports = { analyzeCode };

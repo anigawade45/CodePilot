@@ -29,24 +29,27 @@ export const useReviewResult = () => {
             : issues.filter(i => (i.category || '').toLowerCase() === activeTab);
     }, [issues, activeTab]);
 
-    // 🔄 REFRESH CIRCUIT
-    const fetchReview = useCallback(async () => {
-        if (!id) return;
-        try {
-            setLoading(true);
-            const data = await reviewService.getReviewById(id);
-            setCurrentReview(data);
-        } catch (err) {
-            console.error("Retrieval Failed:", err);
-            setToast({ isOpen: true, message: "Error: Could not retrieve intelligence cluster.", type: 'error' });
-        } finally {
-            setLoading(false);
-        }
-    }, [id, setCurrentReview, setLoading]);
-
     useEffect(() => {
-        fetchReview();
-    }, [fetchReview]);
+        let ignore = false;
+        const sync = async () => {
+            if (!id) return;
+            try {
+                setLoading(true);
+                const data = await reviewService.getReviewById(id);
+                if (!ignore) setCurrentReview(data);
+            } catch (err) {
+                if (!ignore) {
+                    console.error("Retrieval Failed:", err);
+                    setToast({ isOpen: true, message: "Error: Could not retrieve intelligence cluster.", type: 'error' });
+                }
+            } finally {
+                if (!ignore) setLoading(false);
+            }
+        };
+
+        sync();
+        return () => { ignore = true; };
+    }, [id, setCurrentReview, setLoading]);
 
     // 📡 ACTIONS
     const handleShare = async () => {

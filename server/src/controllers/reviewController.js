@@ -93,7 +93,12 @@ const createReview = async (req, res) => {
       if (issuesError) console.error("Error inserting issues:", issuesError);
     }
 
-    res.status(201).json({ reviewId: review.id, issues, meta });
+    res.status(201).json({ 
+      ...review, 
+      reviewId: review.id, 
+      issues, 
+      meta 
+    });
   } catch (error) {
     console.error("🔥🔥 [SYSTEM CRASH] Critical Analysis Error:", error.message);
     res.status(500).json({ 

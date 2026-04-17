@@ -3,6 +3,7 @@ import { useStore } from '../store/useStore';
 import { reviewService } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
+import { encryptConfig, decryptConfig } from '../lib/encryption';
 import { LANGUAGES } from '../constants/config';
 
 /**
@@ -17,15 +18,29 @@ export const useCodeInput = () => {
   const [language, setLanguage] = useState('javascript');
   const [isGithubModalOpen, setIsGithubModalOpen] = useState(false);
   const [isAiSettingsOpen, setIsAiSettingsOpen] = useState(false);
-  const [aiConfig, setAiConfig] = useState({
-    provider: '',
-    model: '',
-    apiKey: '',
-    endpoint: ''
+  
+  const [aiConfig, setAiConfig] = useState(() => {
+    const saved = localStorage.getItem('codepilot_vault_config');
+    const decrypted = decryptConfig(saved);
+    return decrypted || {
+      provider: '',
+      model: '',
+      apiKey: '',
+      endpoint: ''
+    };
   });
+
   const [toast, setToast] = useState({ isOpen: false, message: '', type: 'success' });
   const { setLoading, isLoading, setCurrentReview, currentReview } = useStore();
   const navigate = useNavigate();
+
+  // 🛡️ ENCRYPTED PERSISTENCE LAYER
+  useEffect(() => {
+    const encrypted = encryptConfig(aiConfig);
+    if (encrypted) {
+      localStorage.setItem('codepilot_vault_config', encrypted);
+    }
+  }, [aiConfig]);
 
   useEffect(() => {
     if (currentReview) {
@@ -113,6 +128,7 @@ export const useCodeInput = () => {
     isLoading,
     handleGithubImport,
     handleFileUpload,
-    handleAnalyze
+    handleAnalyze,
+    onCodeChange: setCode
   };
 };

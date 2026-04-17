@@ -25,7 +25,7 @@ jobs:
       - name: Lint Check
         working-directory: ./client
         run: npm run lint
-        continue-on-error: true # Warning mode for initial CI
+        continue-on-error: true
 
       - name: Vitest Suite
         working-directory: ./client
