@@ -11,7 +11,7 @@ const crypto = require('crypto');
 // 1. Create Review (POST /api/review)
 const createReview = async (req, res) => {
   try {
-    const { code, language } = req.body;
+    const { code, language, aiConfig } = req.body;
     const userId = req.user.sub;
 
     if (!code) return res.status(400).json({ error: "Code is required" });
@@ -21,11 +21,11 @@ const createReview = async (req, res) => {
       .from('reviews')
       .select('*, issues(*)')
       .eq('user_id', userId)
-      .eq('code', code) // Direct comparison for simplicity, could use a hash column for speed
+      .eq('code', code) 
       .limit(1)
       .maybeSingle();
 
-    if (existingReview) {
+    if (existingReview && !aiConfig) {
       console.log("⚡ [Cache Hit] Returning previous analysis for identical code.");
       return res.status(200).json({ 
         reviewId: existingReview.id, 
@@ -34,10 +34,18 @@ const createReview = async (req, res) => {
       });
     }
 
-    // AI Analysis
-    const { issues, meta } = await analyzeCode(code, language || 'javascript');
+    // 🧠 AI Analysis (Supports local Sovereign models & BYOK)
+    const analysisResult = await analyzeCode(code, language || 'javascript', aiConfig || {});
+    
+    if (!analysisResult || !analysisResult.issues) {
+      console.error("❌ [AI Signal Rupture] Analysis service failed to return valid findings.");
+      return res.status(422).json({ error: "The intelligence engine failed to generate a valid report. Please retry." });
+    }
 
-    // DB: Insert Review Header (Inc metadata if column exists, otherwise just basics)
+    const { issues, meta = {} } = analysisResult;
+    const usage = meta.usage || { tokens: 0, estimatedCost: 0 };
+
+    // DB: Insert Review Header with recursive fallback protection
     let review;
     const { data: initialReview, error: reviewError } = await supabase
       .from('reviews')
@@ -45,26 +53,26 @@ const createReview = async (req, res) => {
         user_id: userId, 
         code, 
         language: language || 'javascript',
-        provider: meta.provider,
-        prompt_version: meta.promptVersion,
-        tokens_used: meta.usage.tokens,
-        cost_estimated: meta.usage.estimatedCost
+        provider: meta.provider || 'unknown',
+        prompt_version: meta.promptVersion || '1.0.0',
+        tokens_used: usage.tokens || 0,
+        cost_estimated: usage.estimatedCost || 0
       }])
       .select()
-      .single();
+      .maybeSingle();
 
-    review = initialReview;
-
-    if (reviewError) {
-      console.warn("Meta storage failed, falling back to basic insert...");
-      // Fallback for older schemas
+    if (reviewError || !initialReview) {
+      console.warn("⚠️ [Meta Incompatibility] Basic storage fallback triggered:", reviewError?.message);
       const { data: basicReview, error: basicError } = await supabase
         .from('reviews')
         .insert([{ user_id: userId, code, language: language || 'javascript' }])
         .select()
-        .single();
+        .maybeSingle();
+      
       if (basicError) throw basicError;
       review = basicReview;
+    } else {
+      review = initialReview;
     }
 
     // DB: Insert Issues (Normalized)
@@ -87,8 +95,11 @@ const createReview = async (req, res) => {
 
     res.status(201).json({ reviewId: review.id, issues, meta });
   } catch (error) {
-    console.error("Create Review Error:", error);
-    res.status(500).json({ error: "Internal Server Error during analysis" });
+    console.error("🔥🔥 [SYSTEM CRASH] Critical Analysis Error:", error.message);
+    res.status(500).json({ 
+      error: "Internal Server Error during analysis", 
+      detail: error.message 
+    });
   }
 };
 

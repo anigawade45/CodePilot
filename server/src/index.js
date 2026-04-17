@@ -21,10 +21,11 @@ app.use(cors({
     allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-// Global Rate Limiting
+// Global Rate Limiting [v10.0]
 const globalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 200, // Increased for analysis tasks
+  windowMs: 15 * 60 * 1000, 
+  max: 1000, 
+  validate: false, // 🛡️ GLOBAL OVERRIDE
   message: { error: "Security Guard: Too many requests from this IP. Cooling down." }
 });
 
@@ -40,6 +41,15 @@ app.use((req, res, next) => {
 // Routes
 app.use('/api', reviewRoutes);
 app.use('/api', fileRoutes);
+
+// 🏠 Root Health Check
+app.get('/', (req, res) => {
+  res.json({ 
+    status: "Operational", 
+    cluster: "CodePilot Enterprise", 
+    gateway: "/api" 
+  });
+});
 
 // Global Error Handler
 app.use((err, req, res, next) => {

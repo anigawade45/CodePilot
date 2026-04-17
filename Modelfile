@@ -1,0 +1,10 @@
+# 🛰️ SOVEREIGN MODEL INGRESS
+FROM "D:\llama-3-8b.Q4_K_M.gguf"
+
+# 🧠 Performance Parameters
+PARAMETER temperature 0.1
+PARAMETER num_ctx 4096
+PARAMETER stop "###"
+
+# 🛡️ System Directive
+SYSTEM "You are CodePilot-Brain. You are a sovereign code analysis engine. Analyze the provided code with high precision. Return results in JSON array format."
