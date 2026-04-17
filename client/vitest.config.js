@@ -17,5 +17,9 @@ export default defineConfig({
     environment: 'jsdom',
     globals: true,
     setupFiles: './src/test/setup.js',
+    env: {
+      VITE_SUPABASE_URL: 'https://mock-project.supabase.co',
+      VITE_SUPABASE_PUBLISHABLE_KEY: 'mock-key',
+    },
   },
 });
